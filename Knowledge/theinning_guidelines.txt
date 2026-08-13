@@ -1,0 +1,329 @@
+GHOSN AL-QANA AI
+DATE PALM FRUIT THINNING KNOWLEDGE BASE
+
+Purpose:
+This knowledge base provides general agricultural guidance for the AI system when assessing whether a date palm fruit bunch may require thinning.
+
+IMPORTANT:
+These guidelines are advisory and must not be treated as universal prescriptions.
+Thinning practices vary according to palm variety, fruit set, growth stage, climate, palm age, vigor, and local cultivation practices.
+The AI must not automatically execute or authorize physical thinning.
+A qualified farmer or agricultural specialist must review the recommendation.
+
+==================================================
+1. PURPOSE OF FRUIT THINNING
+==================================================
+
+Fruit thinning is used in date palm production to manage crop load and improve fruit development.
+
+Potential benefits include:
+- Improving fruit size.
+- Improving fruit quality and texture.
+- Supporting more uniform fruit development.
+- Reducing excessive crop load.
+- Improving air circulation around fruits.
+- Supporting earlier and more uniform ripening.
+- Reducing excessive bunch weight.
+
+Fruit thinning may reduce total fruit yield while improving the quality and size of the remaining fruits.
+
+==================================================
+2. TYPES OF THINNING
+==================================================
+
+Fruit thinning can occur at different levels:
+
+1. Bunch removal:
+   Removing entire fruit bunches from a palm.
+
+2. Strand thinning:
+   Reducing the number of strands within a bunch.
+
+3. Fruit thinning:
+   Reducing the number of fruits retained on individual strands.
+
+The appropriate method depends on the palm variety, fruit set, growth stage, climate, and production objectives.
+
+==================================================
+3. FACTORS TO CONSIDER BEFORE RECOMMENDING THINNING
+==================================================
+
+The AI should consider multiple factors rather than relying on a single measurement.
+
+Visual factors:
+- Number of fruit bunches.
+- Bunch size.
+- Fruit density.
+- Fruit distribution.
+- Approximate fruit size.
+- Growth stage.
+- Visible signs of excessive crop load.
+- Visible damage, disease, or abnormal fruit development.
+
+Palm factors:
+- Palm variety.
+- Palm age.
+- Palm vigor.
+- Previous production history.
+- Number of productive bunches.
+
+Environmental factors:
+- Soil moisture.
+- Temperature.
+- Relative humidity.
+- Irrigation conditions.
+- Local weather conditions.
+
+Historical factors:
+- Previous thinning recommendations.
+- Previous farmer decisions.
+- Previous fruit density measurements.
+- Previous observations of fruit growth.
+
+==================================================
+4. GENERAL DECISION PRINCIPLES
+==================================================
+
+If fruit density is high:
+- The system should consider whether crop load may be excessive.
+- The system should evaluate the growth stage and palm variety before recommending thinning.
+
+If fruit density is moderate:
+- The system should evaluate other factors before recommending thinning.
+- No automatic thinning recommendation should be made from density alone.
+
+If fruit density is low:
+- Thinning may not be necessary.
+- The system should avoid recommending unnecessary fruit removal.
+
+If image quality is poor:
+- Do not make a confident visual assessment.
+- Request a clearer image.
+
+If agricultural information is incomplete:
+- Ask for the missing information or mark the recommendation as requiring expert review.
+
+==================================================
+5. TIMING
+==================================================
+
+Timing of thinning is important.
+
+Earlier thinning can have a stronger effect on the development and size of retained fruits.
+
+However, the appropriate timing depends on:
+- Palm variety.
+- Pollination timing.
+- Fruit set.
+- Growth stage.
+- Local climate.
+- Cultivation practices.
+
+The system should therefore use growth stage and variety information before recommending a specific thinning time.
+
+==================================================
+6. VARIETY-SPECIFIC RULES
+==================================================
+
+Thinning recommendations must not be assumed to be identical across all date palm varieties.
+
+Examples of varieties include:
+- Sukari
+- Khalas
+- Barhi
+- Medjool
+- Deglet Noor
+
+Each variety can have different:
+- Bunch characteristics.
+- Fruit size.
+- Fruit density.
+- Thinning requirements.
+- Production targets.
+
+If the variety is unknown:
+- Do not apply variety-specific thresholds.
+- Mark the recommendation as requiring additional information.
+
+For the MVP:
+- The system should initially focus on one selected variety.
+- The variety should be explicitly provided as an input.
+
+==================================================
+7. AI DECISION RULES
+==================================================
+
+The Agriculture Agent should combine:
+
+Vision Analysis
++
+Sensor Data
++
+Palm Information
++
+Palm History
++
+Agricultural Knowledge
+
+The AI should NOT make a thinning recommendation based on image density alone.
+
+Example reasoning:
+
+High fruit density
++
+Suitable growth stage
++
+Known variety
++
+Adequate environmental conditions
++
+Historical evidence of high crop load
+
+=
+Higher likelihood that thinning should be considered.
+
+The final recommendation must remain advisory.
+
+==================================================
+8. CONFIDENCE AND VALIDATION
+==================================================
+
+The system should produce a confidence score for its analysis.
+
+High confidence:
+- Image quality is good.
+- Required inputs are available.
+- Vision analysis and agricultural information are consistent.
+
+Medium confidence:
+- Some information is uncertain or incomplete.
+- Human review is recommended.
+
+Low confidence:
+- Image quality is poor.
+- Important information is missing.
+- Agents produce conflicting results.
+
+If confidence is below the configured threshold:
+- Do not provide an automatic thinning recommendation.
+- Request additional information or human review.
+
+IMPORTANT:
+Confidence is an AI/model confidence indicator.
+It is NOT a guarantee that the recommendation is correct.
+
+==================================================
+9. HUMAN-IN-THE-LOOP
+==================================================
+
+The AI system provides recommendations only.
+
+The farmer or qualified agricultural specialist must:
+- Review the recommendation.
+- Approve or reject the recommendation.
+- Decide whether physical thinning should be performed.
+
+The system must never automatically perform physical thinning.
+
+Possible UI actions:
+- APPROVE RECOMMENDATION
+- REJECT RECOMMENDATION
+- REQUEST NEW ANALYSIS
+
+==================================================
+10. MEMORY
+==================================================
+
+The system may maintain a history for each palm.
+
+Example:
+
+Palm ID: P-001
+
+Previous Analysis:
+Fruit density = High
+
+Previous Recommendation:
+Thinning should be considered
+
+Farmer Decision:
+Approved
+
+Follow-up Analysis:
+Fruit density = Medium
+
+The historical information can be used by the Agriculture Agent to understand changes over time.
+
+==================================================
+11. MVP SENSOR DATA
+==================================================
+
+For the prototype, sensor data may be simulated.
+
+Possible inputs:
+- Soil moisture percentage.
+- Temperature.
+- Relative humidity.
+
+Sensor data is supporting information.
+
+Sensors alone should not determine whether fruit thinning is required.
+
+The production system may later connect real IoT sensors.
+
+==================================================
+12. RECOMMENDATION OUTPUT
+==================================================
+
+The Decision Agent should return:
+
+- Thinning required: YES / NO / REVIEW
+- Suggested thinning level: only when supported by sufficient evidence
+- Priority: LOW / MEDIUM / HIGH
+- Confidence score
+- Reason
+- Required farmer action
+
+Example:
+
+Thinning Required: REVIEW
+
+Suggested Thinning:
+Not specified because additional agricultural information is required.
+
+Priority:
+MEDIUM
+
+Confidence:
+72%
+
+Reason:
+High fruit density was detected, but the palm variety and growth-stage information are incomplete.
+
+Farmer Action:
+Provide additional information or request agricultural review.
+
+==================================================
+13. SAFETY RULES
+==================================================
+
+The system must:
+- Avoid unsupported numerical recommendations.
+- Avoid universal thinning percentages.
+- Avoid recommendations when critical data is missing.
+- Request human review when confidence is low.
+- Never automatically execute physical agricultural actions.
+- Clearly communicate uncertainty.
+
+==================================================
+14. SOURCE
+==================================================
+
+Primary general reference:
+
+Food and Agriculture Organization of the United Nations (FAO),
+Date Palm Cultivation:
+Chapter VIII – Pollination and Bunch Management,
+Fruit Thinning.
+
+Additional research can be added to this knowledge base as the project develops.
