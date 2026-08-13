@@ -1,0 +1,270 @@
+"""
+Decision Agent — Ghosn Al-Qana AI
+=================================
+يستقبل مخرجات Vision Agent و Agriculture Agent + ذاكرة النخلة،
+ويطلع توصية واحدة واضحة وقابلة للتنفيذ من قبل المزارع (Advisory Only).
+"""
+
+import json
+import os
+from datetime import date, datetime, timedelta
+from typing import Optional, Literal
+
+from pydantic import BaseModel, Field, ValidationError
+
+# ------------------------------------------------------------------
+# 1) Pydantic Schemas — للتحقق من صحة كل مدخل ومخرج
+# ------------------------------------------------------------------
+
+class VisionOutput(BaseModel):
+    image_quality: Literal["good", "medium", "poor"]
+    bunch_visible: bool
+    fruit_density: Literal["low", "medium", "high", "very_high"]
+    estimated_strands: int
+    relative_fruit_size: Literal["small", "medium", "large"]
+    color_stage: str
+    bunch_condition: str
+    vision_confidence: float
+
+
+class AgricultureOutput(BaseModel):
+    load_level: str
+    growth_stage: str
+    risk_factors: list[str]
+    suggested_thinning_range: str  # e.g. "20-30%"
+    reasoning_ar: str
+    agronomic_confidence: float
+
+
+class PalmMemory(BaseModel):
+    palm_id: str
+    last_thinning_date: Optional[date] = None
+    last_analysis: Optional[str] = None
+
+
+class DecisionOutput(BaseModel):
+    palm_id: str
+    thinning_needed: Literal[True, False, "review_required"]
+    thinning_percentage: Optional[int] = None
+    confidence_score: float
+    priority: Literal["low", "medium", "high"]
+    explanation_ar: str
+    next_check_days: int
+    human_review_required: bool
+
+
+# ------------------------------------------------------------------
+# 2) منطق دمج الثقة (Confidence Fusion)
+# ------------------------------------------------------------------
+
+CONFIDENCE_THRESHOLD = 0.6
+RECENT_THINNING_WINDOW_DAYS = 14
+
+VISION_WEIGHT = 0.4
+AGRONOMY_WEIGHT = 0.6
+
+
+def fuse_confidence(vision_confidence: float, agronomic_confidence: float) -> float:
+    """دمج ثقة الوكيلين السابقين إلى درجة ثقة نهائية واحدة."""
+    score = (vision_confidence * VISION_WEIGHT) + (agronomic_confidence * AGRONOMY_WEIGHT)
+    return round(score, 2)
+
+
+def was_recently_thinned(memory: PalmMemory) -> bool:
+    if not memory.last_thinning_date:
+        return False
+    return (date.today() - memory.last_thinning_date).days < RECENT_THINNING_WINDOW_DAYS
+
+
+def parse_thinning_range(range_str: str) -> tuple[int, int]:
+    """'20-30%' -> (20, 30)"""
+    cleaned = range_str.replace("%", "").strip()
+    low, high = cleaned.split("-")
+    return int(low), int(high)
+
+
+def priority_from_load(load_level: str, risk_factors: list[str]) -> str:
+    if load_level in ("overloaded", "very_high"):
+        return "high"
+    if load_level in ("moderate", "high"):
+        return "medium" if risk_factors else "low"
+    return "low"
+
+
+# ------------------------------------------------------------------
+# 3) القواعد الحاكمة (Safety Rules) — تُطبّق قبل استدعاء الـ LLM
+#    (سياج أمان إضافي حتى لو الموديل غلط)
+# ------------------------------------------------------------------
+
+def apply_safety_rules(
+    vision: VisionOutput,
+    agronomy: AgricultureOutput,
+    memory: PalmMemory,
+) -> Optional[DecisionOutput]:
+    """
+    إذا انطبقت إحدى قواعد السلامة القطعية، نرجّع قرار review_required
+    مباشرة بدون الحاجة لاستدعاء الموديل — هذا يحمي النظام من أي هلوسة.
+    """
+
+    final_confidence = fuse_confidence(vision.vision_confidence, agronomy.agronomic_confidence)
+
+    # قاعدة 1: ثقة منخفضة
+    if final_confidence < CONFIDENCE_THRESHOLD:
+        return DecisionOutput(
+            palm_id=memory.palm_id,
+            thinning_needed="review_required",
+            thinning_percentage=None,
+            confidence_score=final_confidence,
+            priority="medium",
+            explanation_ar="درجة الثقة الإجمالية أقل من الحد الأدنى المطلوب (0.6)، "
+                            "يُرجى رفع صورة أوضح أو مراجعة زراعية.",
+            next_check_days=3,
+            human_review_required=True,
+        )
+
+    # قاعدة 2: تم التخفيف مؤخراً
+    if was_recently_thinned(memory):
+        return DecisionOutput(
+            palm_id=memory.palm_id,
+            thinning_needed=False,
+            thinning_percentage=None,
+            confidence_score=final_confidence,
+            priority="low",
+            explanation_ar="تم تخفيف هذه النخلة خلال آخر 14 يوم، لا يُنصح بتخفيف إضافي حالياً.",
+            next_check_days=RECENT_THINNING_WINDOW_DAYS
+            - (date.today() - memory.last_thinning_date).days,
+            human_review_required=False,
+        )
+
+    # قاعدة 3: الصورة غير واضحة أو العنقود غير ظاهر
+    if vision.image_quality == "poor" or not vision.bunch_visible:
+        return DecisionOutput(
+            palm_id=memory.palm_id,
+            thinning_needed="review_required",
+            thinning_percentage=None,
+            confidence_score=final_confidence,
+            priority="medium",
+            explanation_ar="جودة الصورة غير كافية لاتخاذ قرار موثوق، يُرجى إعادة التصوير.",
+            next_check_days=1,
+            human_review_required=True,
+        )
+
+    return None  # لا توجد قاعدة قطعية → نكمل للموديل (LLM) لصياغة التوصية
+
+
+# ------------------------------------------------------------------
+# 4) بناء الـ Prompt واستدعاء الـ LLM
+# ------------------------------------------------------------------
+
+PROMPT_PATH = os.path.join(os.path.dirname(__file__), "decision_agent_prompt.txt")
+
+
+def build_prompt(vision: VisionOutput, agronomy: AgricultureOutput, memory: PalmMemory) -> str:
+    with open(PROMPT_PATH, "r", encoding="utf-8") as f:
+        template = f.read()
+
+    return (
+        template
+        .replace("{{palm_id}}", memory.palm_id)
+        .replace("{{vision_agent_output}}", vision.model_dump_json())
+        .replace("{{agriculture_agent_output}}", agronomy.model_dump_json())
+        .replace("{{palm_memory}}", memory.model_dump_json())
+    )
+
+
+def call_llm(prompt: str) -> dict:
+    """
+    استدعاء نموذج اللغة (Gemini / GPT-4o). عدّل هذي الدالة حسب الـ SDK
+    اللي بتستخدمونه بالفريق (نفس فكرة استدعاء Vision و Agriculture Agent).
+    """
+    import anthropic  # أو مكتبة الموديل المستخدم بالمشروع
+
+    client = anthropic.Anthropic()
+    response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=500,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    raw_text = response.content[0].text
+    return json.loads(raw_text)
+
+
+# ------------------------------------------------------------------
+# 5) الدالة الرئيسية — هذي اللي يستدعيها الـ FastAPI endpoint
+# ------------------------------------------------------------------
+
+def run_decision_agent(
+    vision_data: dict,
+    agronomy_data: dict,
+    memory_data: dict,
+) -> DecisionOutput:
+    # تحقق من صحة المدخلات أولاً
+    try:
+        vision = VisionOutput(**vision_data)
+        agronomy = AgricultureOutput(**agronomy_data)
+        memory = PalmMemory(**memory_data)
+    except ValidationError as e:
+        raise ValueError(f"مدخلات غير صالحة: {e}")
+
+    # طبّق قواعد السلامة القطعية أولاً
+    safety_decision = apply_safety_rules(vision, agronomy, memory)
+    if safety_decision:
+        return safety_decision
+
+    # لا توجد قاعدة قاطعة → استدعِ الموديل ليصيغ التوصية النهائية
+    prompt = build_prompt(vision, agronomy, memory)
+    raw_output = call_llm(prompt)
+
+    try:
+        decision = DecisionOutput(**raw_output)
+    except ValidationError as e:
+        # لو الموديل رجّع JSON غير مطابق → لا تثق فيه، اطلب مراجعة بشرية
+        return DecisionOutput(
+            palm_id=memory.palm_id,
+            thinning_needed="review_required",
+            confidence_score=0.0,
+            priority="medium",
+            explanation_ar=f"تعذّر التحقق من صحة مخرجات النموذج: {e}",
+            next_check_days=1,
+            human_review_required=True,
+        )
+
+    # تحقق إضافي: النسبة المقترحة يجب أن تقع ضمن نطاق Agriculture Agent
+    if decision.thinning_percentage is not None:
+        low, high = parse_thinning_range(agronomy.suggested_thinning_range)
+        if not (low <= decision.thinning_percentage <= high):
+            decision.thinning_percentage = round((low + high) / 2)
+
+    return decision
+
+
+# ------------------------------------------------------------------
+# مثال استخدام (للاختبار المحلي فقط)
+# ------------------------------------------------------------------
+if __name__ == "__main__":
+    vision_example = {
+        "image_quality": "good",
+        "bunch_visible": True,
+        "fruit_density": "very_high",
+        "estimated_strands": 42,
+        "relative_fruit_size": "small",
+        "color_stage": "kimri",
+        "bunch_condition": "crowded",
+        "vision_confidence": 0.86,
+    }
+    agronomy_example = {
+        "load_level": "overloaded",
+        "growth_stage": "kimri",
+        "risk_factors": ["heat stress", "low soil moisture"],
+        "suggested_thinning_range": "20-30%",
+        "reasoning_ar": "كثافة ثمار عالية مع حجم صغير في مرحلة الكمري",
+        "agronomic_confidence": 0.8,
+    }
+    memory_example = {
+        "palm_id": "P-014",
+        "last_thinning_date": None,
+        "last_analysis": "2026-08-01, density: high",
+    }
+
+    result = run_decision_agent(vision_example, agronomy_example, memory_example)
+    print(result.model_dump_json(indent=2))
