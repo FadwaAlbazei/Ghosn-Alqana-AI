@@ -1,0 +1,988 @@
+# ============================================================
+# 🌴 GHOSN AL-QANA AI
+# Main AI Interface - Google Colab
+# Presentation Ready Prototype
+# ============================================================
+
+!pip -q install gradio
+
+
+import gradio as gr
+import json
+from datetime import datetime
+
+
+# ============================================================
+# 1. MAIN AI ANALYSIS FUNCTION
+# ============================================================
+
+def analyze_palm(
+    image,
+    palm_id,
+    palm_variety,
+    temperature,
+    humidity,
+    soil_moisture,
+    soil_ec
+):
+
+    # --------------------------------------------------------
+    # Validation
+    # --------------------------------------------------------
+
+    errors = []
+
+    if image is None:
+        errors.append("❌ Please upload a palm/date bunch image.")
+
+    if palm_id is None or str(palm_id).strip() == "":
+        errors.append("❌ Please enter the Palm ID.")
+
+    if palm_variety is None or str(palm_variety).strip() == "":
+        errors.append("❌ Please enter the palm variety.")
+
+    if temperature is None:
+        errors.append("❌ Please enter temperature.")
+
+    if humidity is None:
+        errors.append("❌ Please enter humidity.")
+
+    if soil_moisture is None:
+        errors.append("❌ Please enter soil moisture.")
+
+    if soil_ec is None:
+        errors.append("❌ Please enter soil EC.")
+
+    # --------------------------------------------------------
+    # Return errors
+    # --------------------------------------------------------
+
+    if errors:
+
+        error_text = "\n\n".join(errors)
+
+        return (
+            error_text,
+            "",
+            "",
+            "",
+            0,
+            "",
+            "",
+            ""
+        )
+
+
+    # --------------------------------------------------------
+    # Simulated Vision Agent
+    # --------------------------------------------------------
+
+    # Prototype logic
+    # Later this section can be replaced by the real
+    # computer vision model.
+
+    if soil_moisture < 15:
+
+        fruit_density = "Medium"
+        fruit_load = "Medium"
+
+    else:
+
+        fruit_density = "High"
+        fruit_load = "High"
+
+
+    vision_confidence = 0.91
+
+
+    # --------------------------------------------------------
+    # Agriculture Agent
+    # --------------------------------------------------------
+
+    if fruit_density == "High":
+
+        competition = "High"
+
+        agriculture_assessment = (
+            "Fruit density is high compared with the "
+            "expected level for this palm variety. "
+            "Competition between fruits may occur."
+        )
+
+    else:
+
+        competition = "Moderate"
+
+        agriculture_assessment = (
+            "Fruit density is within an acceptable range. "
+            "Competition between fruits appears limited."
+        )
+
+
+    # --------------------------------------------------------
+    # Decision Agent
+    # --------------------------------------------------------
+
+    if fruit_load == "High" and competition == "High":
+
+        recommendation = "Thinning should be considered"
+
+        thinning_percentage = 25
+
+        priority = "Medium"
+
+        farmer_reason = (
+            f"Fruit density is high compared with the "
+            f"usual level for {palm_variety}."
+        )
+
+    else:
+
+        recommendation = "No thinning required"
+
+        thinning_percentage = 0
+
+        priority = "Low"
+
+        farmer_reason = (
+            f"Fruit density appears suitable for {palm_variety}."
+        )
+
+
+    # --------------------------------------------------------
+    # Confidence
+    # --------------------------------------------------------
+
+    confidence = vision_confidence
+
+    # Simple sensor consistency adjustment
+
+    if temperature > 50:
+
+        confidence -= 0.03
+
+    if humidity < 10:
+
+        confidence -= 0.02
+
+    confidence = max(0, min(confidence, 1))
+
+    confidence_percent = int(confidence * 100)
+
+
+    # --------------------------------------------------------
+    # Structured Agent Outputs
+    # --------------------------------------------------------
+
+    vision_result = {
+
+        "agent": "Vision Agent",
+
+        "fruit_density": fruit_density,
+
+        "fruit_load": fruit_load,
+
+        "confidence": confidence_percent
+    }
+
+
+    agriculture_result = {
+
+        "agent": "Agriculture Agent",
+
+        "palm_variety": palm_variety,
+
+        "competition_between_fruits": competition,
+
+        "assessment": agriculture_assessment
+    }
+
+
+    decision_result = {
+
+        "agent": "Decision Agent",
+
+        "recommendation": recommendation,
+
+        "recommended_thinning_percentage":
+            thinning_percentage,
+
+        "priority": priority
+    }
+
+
+    # --------------------------------------------------------
+    # Final JSON
+    # --------------------------------------------------------
+
+    final_result = {
+
+        "system": "Ghosn Al-Qana AI",
+
+        "timestamp":
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+
+        "palm": {
+
+            "palm_id": palm_id,
+
+            "variety": palm_variety
+        },
+
+        "sensor_data": {
+
+            "temperature_c": temperature,
+
+            "humidity_percent": humidity,
+
+            "soil_moisture_percent": soil_moisture,
+
+            "soil_ec": soil_ec
+        },
+
+        "vision_agent": vision_result,
+
+        "agriculture_agent": agriculture_result,
+
+        "decision_agent": decision_result,
+
+        "confidence_score":
+            confidence_percent,
+
+        "farmer_reason":
+            farmer_reason
+    }
+
+
+    json_result = json.dumps(
+        final_result,
+        ensure_ascii=False,
+        indent=2
+    )
+
+
+    # --------------------------------------------------------
+    # UI Agent Results
+    # --------------------------------------------------------
+
+    vision_text = f"""
+### 👁️ Vision Agent
+
+**Fruit Density:** {fruit_density}
+
+**Fruit Load:** {fruit_load}
+
+**Vision Confidence:** {confidence_percent}%
+"""
+
+
+    agriculture_text = f"""
+### 🌱 Agriculture Agent
+
+**Competition:** {competition}
+
+**Assessment:**
+
+{agriculture_assessment}
+"""
+
+
+    decision_text = f"""
+### 🤖 Decision Agent
+
+**Recommendation:**
+
+{recommendation}
+
+**Recommended Thinning:** {thinning_percentage}%
+
+**Priority:** {priority}
+"""
+
+
+    confidence_text = (
+        f"### 🎯 Confidence Score\n\n"
+        f"**{confidence_percent}%**"
+    )
+
+
+    return (
+
+        "",
+
+        vision_text,
+
+        agriculture_text,
+
+        decision_text,
+
+        confidence,
+
+        confidence_text,
+
+        farmer_reason,
+
+        json_result
+    )
+
+
+# ============================================================
+# 2. APPROVE FUNCTION
+# ============================================================
+
+def approve_recommendation(
+    palm_id,
+    recommendation,
+    percentage
+):
+
+    if palm_id == "" or recommendation == "":
+
+        return (
+            "❌ Please analyze the palm first."
+        )
+
+
+    return f"""
+## ✅ Recommendation Approved
+
+**Palm ID:** {palm_id}
+
+**Recommendation:** {recommendation}
+
+**Thinning Percentage:** {percentage}
+
+**Status:** Approved
+
+The recommendation has been recorded successfully.
+"""
+
+
+# ============================================================
+# 3. REJECT FUNCTION
+# ============================================================
+
+def reject_recommendation(
+    palm_id,
+    recommendation
+):
+
+    if palm_id == "" or recommendation == "":
+
+        return (
+            "❌ Please analyze the palm first."
+        )
+
+
+    return f"""
+## ❌ Recommendation Rejected
+
+**Palm ID:** {palm_id}
+
+**Recommendation:** {recommendation}
+
+**Status:** Rejected
+
+The farmer rejected the AI recommendation.
+"""
+
+
+# ============================================================
+# 4. CSS
+# ============================================================
+
+custom_css = """
+
+body {
+
+    direction: ltr;
+
+}
+
+.gradio-container {
+
+    max-width: 1200px !important;
+
+    margin: auto;
+
+}
+
+.main-title {
+
+    text-align: center;
+
+    color: #176B4D;
+
+}
+
+.subtitle {
+
+    text-align: center;
+
+    color: #555;
+
+}
+
+.agent-box {
+
+    border-radius: 15px;
+
+    padding: 15px;
+
+}
+
+.analyze-button {
+
+    font-size: 20px !important;
+
+    font-weight: bold !important;
+
+}
+
+"""
+
+
+# ============================================================
+# 5. BUILD MAIN INTERFACE
+# ============================================================
+
+with gr.Blocks(
+
+    title="Ghosn Al-Qana AI",
+
+    css=custom_css,
+
+    theme=gr.themes.Soft(
+
+        primary_hue="green",
+
+        secondary_hue="emerald"
+
+    )
+
+) as app:
+
+
+    # ========================================================
+    # HEADER
+    # ========================================================
+
+    gr.Markdown(
+        """
+        <div class="main-title">
+
+        # 🌴 Ghosn Al-Qana AI
+
+        ### Intelligent Palm & Date Bunch Decision Support System
+
+        </div>
+        """
+    )
+
+
+    gr.Markdown(
+        """
+        <div class="subtitle">
+
+        Upload a palm/date bunch image, enter palm and sensor
+        information, then let the AI agents analyze the palm
+        and provide an agricultural recommendation.
+
+        </div>
+        """
+    )
+
+
+    # ========================================================
+    # INPUT SECTION
+    # ========================================================
+
+    gr.Markdown(
+        """
+        ## 🌴 Palm Information
+        """
+    )
+
+
+    with gr.Row():
+
+
+        # ----------------------------------------------------
+        # IMAGE
+        # ----------------------------------------------------
+
+        with gr.Column(scale=1):
+
+            image = gr.Image(
+
+                sources=[
+                    "upload",
+                    "webcam"
+                ],
+
+                type="numpy",
+
+                label="📷 Palm / Date Bunch Image"
+
+            )
+
+
+        # ----------------------------------------------------
+        # PALM INFORMATION
+        # ----------------------------------------------------
+
+        with gr.Column(scale=1):
+
+            palm_id = gr.Textbox(
+
+                label="Palm ID",
+
+                placeholder="Example: P-001"
+
+            )
+
+
+            palm_variety = gr.Dropdown(
+
+                choices=[
+
+                    "Khalas",
+
+                    "Sukkari",
+
+                    "Ajwa",
+
+                    "Medjool",
+
+                    "Sagai",
+
+                    "Other"
+
+                ],
+
+                label="Palm Variety",
+
+                value="Khalas"
+
+            )
+
+
+    # ========================================================
+    # SENSOR DATA
+    # ========================================================
+
+    gr.Markdown(
+        """
+        ## 🌡️ Sensor Data
+        """
+    )
+
+
+    with gr.Row():
+
+
+        temperature = gr.Number(
+
+            label="Temperature (°C)",
+
+            value=43.0
+
+        )
+
+
+        humidity = gr.Number(
+
+            label="Humidity (%)",
+
+            value=18.0
+
+        )
+
+
+        soil_moisture = gr.Number(
+
+            label="Soil Moisture (%)",
+
+            value=21.0
+
+        )
+
+
+        soil_ec = gr.Number(
+
+            label="Soil EC",
+
+            value=3.1
+
+        )
+
+
+    # ========================================================
+    # ANALYZE BUTTON
+    # ========================================================
+
+    analyze_button = gr.Button(
+
+        "🔍 ANALYZE PALM",
+
+        variant="primary",
+
+        size="lg",
+
+        elem_classes="analyze-button"
+
+    )
+
+
+    # ========================================================
+    # VALIDATION / ERROR MESSAGE
+    # ========================================================
+
+    validation_message = gr.Markdown()
+
+
+    # ========================================================
+    # AI ANALYSIS
+    # ========================================================
+
+    gr.Markdown(
+        """
+        # 🤖 AI Analysis
+        """
+    )
+
+
+    # ========================================================
+    # AGENT RESULTS
+    # ========================================================
+
+    with gr.Row():
+
+
+        vision_output = gr.Markdown(
+            """
+            ### 👁️ Vision Agent
+
+            Waiting for analysis...
+            """
+        )
+
+
+        agriculture_output = gr.Markdown(
+            """
+            ### 🌱 Agriculture Agent
+
+            Waiting for analysis...
+            """
+        )
+
+
+        decision_output = gr.Markdown(
+            """
+            ### 🤖 Decision Agent
+
+            Waiting for analysis...
+            """
+        )
+
+
+    # ========================================================
+    # CONFIDENCE
+    # ========================================================
+
+    with gr.Row():
+
+
+        confidence_slider = gr.Slider(
+
+            minimum=0,
+
+            maximum=1,
+
+            value=0,
+
+            step=0.01,
+
+            label="🎯 AI Confidence Score",
+
+            interactive=False
+
+        )
+
+
+        confidence_text = gr.Markdown(
+
+            """
+            ### 🎯 Confidence Score
+
+            Waiting for analysis...
+
+            """
+
+        )
+
+
+    # ========================================================
+    # FARMER REASON
+    # ========================================================
+
+    gr.Markdown(
+        """
+        ## 🌱 Why?
+
+        """
+    )
+
+
+    farmer_reason = gr.Markdown(
+
+        """
+        The agricultural reasoning will appear here
+        after analysis.
+        """
+
+    )
+
+
+    # ========================================================
+    # APPROVE / REJECT
+    # ========================================================
+
+    gr.Markdown(
+        """
+        ## Decision
+        """
+    )
+
+
+    with gr.Row():
+
+
+        approve_button = gr.Button(
+
+            "✅ APPROVE",
+
+            variant="primary",
+
+            size="lg"
+
+        )
+
+
+        reject_button = gr.Button(
+
+            "❌ REJECT",
+
+            variant="stop",
+
+            size="lg"
+
+        )
+
+
+    # ========================================================
+    # VALIDATION RESULT
+    # ========================================================
+
+    decision_status = gr.Markdown()
+
+
+    # ========================================================
+    # DETAILS
+    # ========================================================
+
+    with gr.Accordion(
+
+        "🔎 View Detailed Agent Outputs",
+
+        open=False
+
+    ):
+
+
+        agent_details = gr.Code(
+
+            language="json",
+
+            label="Structured AI Output",
+
+            lines=30
+
+        )
+
+
+    # ========================================================
+    # FINAL JSON
+    # ========================================================
+
+    with gr.Accordion(
+
+        "📦 View Final JSON",
+
+        open=False
+
+    ):
+
+
+        json_output = gr.Code(
+
+            language="json",
+
+            label="Final JSON",
+
+            lines=30
+
+        )
+
+
+    # ========================================================
+    # ANALYZE EVENT
+    # ========================================================
+
+    analyze_button.click(
+
+        fn=analyze_palm,
+
+        inputs=[
+
+            image,
+
+            palm_id,
+
+            palm_variety,
+
+            temperature,
+
+            humidity,
+
+            soil_moisture,
+
+            soil_ec
+
+        ],
+
+        outputs=[
+
+            validation_message,
+
+            vision_output,
+
+            agriculture_output,
+
+            decision_output,
+
+            confidence_slider,
+
+            confidence_text,
+
+            farmer_reason,
+
+            agent_details
+
+        ]
+
+    )
+
+
+    # ========================================================
+    # COPY JSON
+    # ========================================================
+
+    def show_json(
+        palm_id,
+        recommendation,
+        percentage
+    ):
+
+        return json.dumps({
+
+            "palm_id": palm_id,
+
+            "recommendation": recommendation,
+
+            "percentage": percentage
+
+        }, indent=2)
+
+
+    # ========================================================
+    # APPROVE EVENT
+    # ========================================================
+
+    approve_button.click(
+
+        fn=approve_recommendation,
+
+        inputs=[
+
+            palm_id,
+
+            decision_output,
+
+            gr.State("25%")
+
+        ],
+
+        outputs=[
+
+            decision_status
+
+        ]
+
+    )
+
+
+    # ========================================================
+    # REJECT EVENT
+    # ========================================================
+
+    reject_button.click(
+
+        fn=reject_recommendation,
+
+        inputs=[
+
+            palm_id,
+
+            decision_output
+
+        ],
+
+        outputs=[
+
+            decision_status
+
+        ]
+
+    )
+
+
+    # ========================================================
+    # FOOTER
+    # ========================================================
+
+    gr.Markdown(
+        """
+        ---
+
+        **Ghosn Al-Qana AI**
+
+        AI-powered agricultural decision support prototype.
+
+        ⚠️ AI recommendations should be validated by an agricultural
+        specialist before actual field implementation.
+        """
+    )
+
+
+# ============================================================
+# 6. LAUNCH
+# ============================================================
+
+app.launch(
+
+    share=True,
+
+    debug=True
+
+)
