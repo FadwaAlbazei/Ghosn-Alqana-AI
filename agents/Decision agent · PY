@@ -2,8 +2,17 @@
 وكيل القرار (Decision Agent) — غصن القنا AI
 =================================================
 يستقبل مخرجات وكيل الرؤية (Vision Agent) ووكيل الزراعة (Agriculture Agent)
-+ قراءة حساس اللون (Color Sensor) + ذاكرة النخلة، ويطلع توصية واحدة
-واضحة وقابلة للتنفيذ من قبل المزارع (استشارية فقط - Advisory Only).
++ ذاكرة النخلة، ويطلع توصية واحدة واضحة وقابلة للتنفيذ من قبل المزارع
+(استشارية فقط - Advisory Only).
+
+ملاحظة معمارية مهمة (حسب وثيقة المشروع):
+------------------------------------------
+- Vision Agent يحلل الصورة فقط، ولا يستقبل أي قراءة حساس (لا لون ولا حرارة).
+- Agriculture Agent هو المسؤول عن دمج القراءات البيئية/الحساسات (بما فيها
+  قراءة اللون) مع مخرجات Vision Agent، وينتج تحليلاً زراعياً واحداً متكاملاً
+  (load_level, risk_factors, reasoning_ar, agronomic_confidence).
+- Decision Agent (هذا الملف) لا يستقبل قراءة اللون بشكل منفصل إطلاقاً —
+  هو موجود أصلاً ضمن تحليل Agriculture Agent الجاهز.
 """
 
 import json
@@ -23,23 +32,16 @@ class VisionOutput(BaseModel):
     fruit_density: Literal["low", "medium", "high", "very_high"]
     estimated_strands: int
     relative_fruit_size: Literal["small", "medium", "large"]
-    color_stage: str  # المرحلة المتوقعة بصرياً: hababouk/kimri/khalal/rutab/tamr
+    color_stage: str  # hababouk / kimri / khalal / rutab / tamr
     bunch_condition: str
     vision_confidence: float
 
 
-class ColorSensorReading(BaseModel):
-    """
-    قراءة حساس اللون — عامل داعم فقط حسب الـ Knowledge Base
-    (يجب ألا يُستخدم لوحده لاتخاذ القرار).
-    """
-    dominant_color: str
-    color_intensity: float  # 0.0 - 1.0
-    matches_expected_stage: bool  # هل اللون متوافق مع color_stage من Vision Agent؟
-    reading_reliable: bool = True  # False لو الحساس غير موثوق أو القراءة مفقودة
-
-
 class AgricultureOutput(BaseModel):
+    """
+    مخرجات Agriculture Agent — تتضمن أصلاً تحليل قراءة اللون والحساسات
+    البيئية مدمجة داخل risk_factors و reasoning_ar و agronomic_confidence.
+    """
     load_level: str
     growth_stage: str
     risk_factors: list[str]
@@ -96,42 +98,18 @@ def parse_thinning_range(range_str: str) -> tuple[int, int]:
     return int(low), int(high)
 
 
-def color_risk_level(color: Optional[ColorSensorReading]) -> str:
+def priority_from_load(load_level: str, risk_factors: list[str]) -> str:
     """
-    يحدد مستوى الخطر المستنتج من قراءة اللون فقط (عامل داعم).
-    - لو القراءة غير موجودة أو غير موثوقة → "unknown" (لا تُستخدم في رفع الأولوية لوحدها)
-    - لو اللون لا يطابق المرحلة المتوقعة → "elevated"
-    - غير ذلك → "normal"
+    يحدد أولوية التوصية بناءً على مستوى الحمل وعوامل الخطر الزراعية.
+    ملاحظة: أي مؤشر لوني (elevated color) يكون أصلاً منعكساً هنا داخل
+    risk_factors القادمة من Agriculture Agent (مثل "color mismatch")،
+    فلا حاجة لمعالجة اللون بشكل منفصل بهذا الملف.
     """
-    if color is None or not color.reading_reliable:
-        return "unknown"
-    if not color.matches_expected_stage:
-        return "elevated"
-    return "normal"
-
-
-def priority_from_load(
-    load_level: str,
-    risk_factors: list[str],
-    color_risk: str = "unknown",
-) -> str:
-    """
-    يحدد أولوية التوصية بناءً على مستوى الحمل وعوامل الخطر الزراعية،
-    مع مراعاة قراءة اللون كعامل داعم فقط (لا يرفع الأولوية لوحده أبداً
-    إذا كان الحمل منخفضاً — يجب دائماً أن يترافق مع مؤشر آخر).
-    """
-    base_priority = "low"
     if load_level in ("overloaded", "very_high"):
-        base_priority = "high"
-    elif load_level in ("moderate", "high"):
-        base_priority = "medium" if risk_factors else "low"
-
-    # قراءة اللون تدعم رفع الأولوية درجة واحدة فقط، وفقط إذا كان هناك
-    # أصلاً حمل متوسط أو أعلى (لا تنشئ أولوية من العدم اعتماداً على اللون وحده)
-    if color_risk == "elevated" and base_priority == "medium":
         return "high"
-
-    return base_priority
+    if load_level in ("moderate", "high"):
+        return "medium" if risk_factors else "low"
+    return "low"
 
 
 # ------------------------------------------------------------------
@@ -143,7 +121,6 @@ def apply_safety_rules(
     vision: VisionOutput,
     agronomy: AgricultureOutput,
     memory: PalmMemory,
-    color: Optional[ColorSensorReading] = None,
 ) -> Optional[DecisionOutput]:
     """
     إذا انطبقت إحدى قواعد السلامة القطعية، نرجّع قرار "يحتاج مراجعة"
@@ -152,7 +129,6 @@ def apply_safety_rules(
     """
 
     final_confidence = fuse_confidence(vision.vision_confidence, agronomy.agronomic_confidence)
-    c_risk = color_risk_level(color)
 
     # القاعدة 1: ثقة منخفضة
     if final_confidence < CONFIDENCE_THRESHOLD:
@@ -195,22 +171,6 @@ def apply_safety_rules(
             human_review_required=True,
         )
 
-    # القاعدة 4: قراءة اللون وحدها لا يمكن أن تكون أساس القرار
-    # (لو كل ما عندنا هو مؤشر لون بدون كثافة ثمار كافية أو ثقة زراعية كافية)
-    if c_risk == "elevated" and agronomy.load_level not in ("moderate", "high", "overloaded", "very_high"):
-        return DecisionOutput(
-            palm_id=memory.palm_id,
-            thinning_needed="review_required",
-            thinning_percentage=None,
-            confidence_score=final_confidence,
-            priority="low",
-            explanation_ar="قراءة اللون تشير إلى احتمال وجود مشكلة، لكن لا توجد مؤشرات "
-                            "كافية أخرى (كثافة الحمل منخفضة). يُنصح بمراجعة إضافية بدل "
-                            "الاعتماد على اللون وحده.",
-            next_check_days=3,
-            human_review_required=True,
-        )
-
     return None  # لا توجد قاعدة قطعية → نكمل لاستدعاء الموديل لصياغة التوصية
 
 
@@ -221,25 +181,16 @@ def apply_safety_rules(
 PROMPT_PATH = os.path.join(os.path.dirname(__file__), "decision_agent_prompt.txt")
 
 
-def build_prompt(
-    vision: VisionOutput,
-    agronomy: AgricultureOutput,
-    memory: PalmMemory,
-    color: Optional[ColorSensorReading] = None,
-) -> str:
+def build_prompt(vision: VisionOutput, agronomy: AgricultureOutput, memory: PalmMemory) -> str:
     """يبني نص البرومبت النهائي بتعويض المتغيرات بالقيم الفعلية."""
     with open(PROMPT_PATH, "r", encoding="utf-8") as f:
         template = f.read()
 
-    color_json = color.model_dump_json() if color else "null"
-
     return (
         template
-        .replace("{{palm_id}}", memory.palm_id)
         .replace("{{vision_agent_output}}", vision.model_dump_json())
         .replace("{{agriculture_agent_output}}", agronomy.model_dump_json())
         .replace("{{palm_memory}}", memory.model_dump_json())
-        .replace("{{color_sensor_reading}}", color_json)
     )
 
 
@@ -269,7 +220,6 @@ def run_decision_agent(
     vision_data: dict,
     agronomy_data: dict,
     memory_data: dict,
-    color_data: Optional[dict] = None,
 ) -> DecisionOutput:
     """الدالة الرئيسية لوكيل القرار: تتحقق، تطبّق قواعد السلامة، ثم تستدعي الموديل عند الحاجة."""
     # تحقق من صحة المدخلات أولاً
@@ -277,17 +227,16 @@ def run_decision_agent(
         vision = VisionOutput(**vision_data)
         agronomy = AgricultureOutput(**agronomy_data)
         memory = PalmMemory(**memory_data)
-        color = ColorSensorReading(**color_data) if color_data else None
     except ValidationError as e:
         raise ValueError(f"مدخلات غير صالحة: {e}")
 
     # طبّق قواعد السلامة القطعية أولاً
-    safety_decision = apply_safety_rules(vision, agronomy, memory, color)
+    safety_decision = apply_safety_rules(vision, agronomy, memory)
     if safety_decision:
         return safety_decision
 
     # لا توجد قاعدة قاطعة → استدعِ الموديل ليصيغ التوصية النهائية
-    prompt = build_prompt(vision, agronomy, memory, color)
+    prompt = build_prompt(vision, agronomy, memory)
     raw_output = call_llm(prompt)
 
     try:
@@ -310,13 +259,6 @@ def run_decision_agent(
         if not (low <= decision.thinning_percentage <= high):
             decision.thinning_percentage = round((low + high) / 2)
 
-    # اضبط الأولوية النهائية بدمج تحليل الحمل مع قراءة اللون (عامل داعم فقط)
-    decision.priority = priority_from_load(
-        agronomy.load_level,
-        agronomy.risk_factors,
-        color_risk_level(color),
-    )
-
     return decision
 
 
@@ -334,19 +276,15 @@ if __name__ == "__main__":
         "bunch_condition": "crowded",
         "vision_confidence": 0.86,
     }
+    # ملاحظة: أي تحليل لوني (مطابقة/تعارض) موجود هنا أصلاً، مدموج من
+    # Agriculture Agent ضمن risk_factors و reasoning_ar
     agronomy_example = {
         "load_level": "overloaded",
         "growth_stage": "kimri",
-        "risk_factors": ["poor bunch ventilation"],
+        "risk_factors": ["heat stress", "low soil moisture", "poor bunch ventilation"],
         "suggested_thinning_range": "20-30%",
-        "reasoning_ar": "كثافة ثمار عالية مع حجم صغير في مرحلة الكمري",
+        "reasoning_ar": "كثافة ثمار عالية مع حجم صغير في مرحلة الكمري؛ الحرارة ترفع الإجهاد",
         "agronomic_confidence": 0.8,
-    }
-    color_example = {
-        "dominant_color": "green",
-        "color_intensity": 0.7,
-        "matches_expected_stage": True,
-        "reading_reliable": True,
     }
     memory_example = {
         "palm_id": "P-014",
@@ -354,5 +292,5 @@ if __name__ == "__main__":
         "last_analysis": "2026-08-01, density: high",
     }
 
-    result = run_decision_agent(vision_example, agronomy_example, memory_example, color_example)
+    result = run_decision_agent(vision_example, agronomy_example, memory_example)
     print(result.model_dump_json(indent=2))
