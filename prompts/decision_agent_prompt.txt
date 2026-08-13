@@ -7,17 +7,19 @@ Rules:
 - If final confidence < 0.6 -> set thinning_needed = "review_required" and request a better
   image.
 - If the palm was thinned within the last 14 days -> do not recommend thinning again.
-- The color sensor reading is a SUPPORTING signal only. Never base thinning_needed or
-  priority on the color reading alone -- it must always be combined with fruit density
-  and agronomic load_level.
-- If the color sensor reading is missing or unreliable, continue using vision and
-  agronomy data only; do not block the recommendation because of it.
+- vision_agent_output includes "color_matches_stage" (true/false/null), which is the
+  Vision Agent's own comparison between its visual color_stage estimate and the raw
+  color sensor reading. Treat it as a SUPPORTING signal only. Never base thinning_needed
+  or priority on color_matches_stage alone -- it must always be combined with fruit
+  density and agronomic load_level. If it is null (no reliable sensor reading available),
+  proceed using vision and agronomy data only; do not block the recommendation.
 - The recommendation is ADVISORY ONLY; the farmer makes the final call.
 Return ONLY valid JSON.
 USER:
+palm_id: {{palm_id}}
 vision: {{vision_agent_output}}
 agronomy: {{agriculture_agent_output}}
-color_sensor: {{color_sensor_reading}}
+color_sensor_raw: {{color_sensor_reading}}
 history: {{palm_memory}}
 EXPECTED OUTPUT:
 {
@@ -26,7 +28,7 @@ EXPECTED OUTPUT:
   "thinning_percentage": 25,
   "confidence_score": 0.82,
   "priority": "high",
-  "explanation_ar": "تخفيف 25% من الثمار لتحسين حجم الثمرة وتقليل إجهاد النخلة، مع دعم من قراءة اللون المطابقة لمرحلة النمو",
+  "explanation_ar": "تخفيف 25% من الثمار لتحسين حجم الثمرة وتقليل إجهاد النخلة، مع دعم من تطابق اللون مع مرحلة النمو",
   "next_check_days": 14,
   "human_review_required": false
 }
