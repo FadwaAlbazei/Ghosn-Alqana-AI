@@ -1,0 +1,121 @@
+[
+  {
+    "id": "kb-00",
+    "section_number": 0,
+    "title": "INTRODUCTION AND DISCLAIMER",
+    "text": "GHOSN AL-QANA AI\nDATE PALM FRUIT THINNING KNOWLEDGE BASE\n\nPurpose:\nThis knowledge base provides general agricultural guidance for the AI system when assessing whether a date palm fruit bunch may require thinning.\n\nIMPORTANT:\nThese guidelines are advisory and must not be treated as universal prescriptions.\nThinning practices vary according to palm variety, fruit set, growth stage, climate, palm age, vigor, and local cultivation practices.\nThe AI must not automatically execute or authorize physical thinning.\nA qualified farmer or agricultural specialist must review the recommendation.",
+    "source": "theinning_guidelines.txt"
+  },
+  {
+    "id": "kb-01",
+    "section_number": 1,
+    "title": "PURPOSE OF FRUIT THINNING",
+    "text": "Fruit thinning is used in date palm production to manage crop load and improve fruit development.\n\nPotential benefits include:\n- Improving fruit size.\n- Improving fruit quality and texture.\n- Supporting more uniform fruit development.\n- Reducing excessive crop load.\n- Improving air circulation around fruits.\n- Supporting earlier and more uniform ripening.\n- Reducing excessive bunch weight.\n\nFruit thinning may reduce total fruit yield while improving the quality and size of the remaining fruits.",
+    "source": "theinning_guidelines.txt"
+  },
+  {
+    "id": "kb-02",
+    "section_number": 2,
+    "title": "TYPES OF THINNING",
+    "text": "Fruit thinning can occur at different levels:\n\n1. Bunch removal:\n   Removing entire fruit bunches from a palm.\n\n2. Strand thinning:\n   Reducing the number of strands within a bunch.\n\n3. Fruit thinning:\n   Reducing the number of fruits retained on individual strands.\n\nThe appropriate method depends on the palm variety, fruit set, growth stage, climate, and production objectives.",
+    "source": "theinning_guidelines.txt"
+  },
+  {
+    "id": "kb-03",
+    "section_number": 3,
+    "title": "FACTORS TO CONSIDER",
+    "text": "The AI should consider multiple factors rather than relying on a single measurement.\n\nVisual factors:\n- Number of fruit bunches.\n- Bunch size.\n- Fruit density.\n- Fruit distribution.\n- Approximate fruit size.\n- Growth stage.\n- Visible signs of excessive crop load.\n- Visible damage, disease, or abnormal fruit development.\n\nPalm factors:\n- Palm variety.\n- Palm age.\n- Palm vigor.\n- Previous production history.\n- Number of productive bunches.\n\nSensor factor:\n- Color sensor reading.\n\nThe color sensor is a supporting signal only.\nIt must not independently determine whether thinning is required.\n\nHistorical factors:\n- Previous thinning recommendations.\n- Previous farmer decisions.\n- Previous fruit density measurements.\n- Previous observations of fruit growth.",
+    "source": "theinning_guidelines.txt"
+  },
+  {
+    "id": "kb-04",
+    "section_number": 4,
+    "title": "COLOR SENSOR",
+    "text": "The color sensor provides an additional signal that can support the visual assessment of the fruit bunch.\n\nThe sensor may provide information such as:\n- Dominant color.\n- Color intensity.\n- RGB values.\n- Color changes over time.\n\nColor sensor data may help support assessment of fruit development or visible color characteristics.\n\nIMPORTANT:\nColor sensor readings must not be treated as a standalone indicator of fruit maturity, fruit quality, or thinning requirements.\n\nThe Agriculture Agent should combine:\n- Vision Agent results.\n- Color sensor data.\n- Palm variety.\n- Growth stage.\n- Palm history.\n- Agricultural knowledge.\n\nIf the color sensor reading is missing or unreliable:\n- Continue only if sufficient visual and agricultural information is available.\n- Otherwise request additional information or human review.",
+    "source": "theinning_guidelines.txt"
+  },
+  {
+    "id": "kb-05",
+    "section_number": 5,
+    "title": "GENERAL DECISION PRINCIPLES",
+    "text": "If fruit density is high:\n- The system should consider whether crop load may be excessive.\n- The system should evaluate growth stage and palm variety before recommending thinning.\n\nIf fruit density is moderate:\n- The system should evaluate additional factors before recommending thinning.\n- Density alone should not trigger a recommendation.\n\nIf fruit density is low:\n- Thinning may not be necessary.\n- The system should avoid recommending unnecessary fruit removal.\n\nIf image quality is poor:\n- Do not make a confident visual assessment.\n- Request a clearer image.\n\nIf agricultural information is incomplete:\n- Ask for the missing information or mark the recommendation as requiring expert review.",
+    "source": "theinning_guidelines.txt"
+  },
+  {
+    "id": "kb-06",
+    "section_number": 6,
+    "title": "TIMING",
+    "text": "Timing of thinning is important.\n\nEarlier thinning can have a stronger effect on the development and size of retained fruits.\n\nHowever, the appropriate timing depends on:\n- Palm variety.\n- Pollination timing.\n- Fruit set.\n- Growth stage.\n- Local climate.\n- Cultivation practices.\n\nThe system should use available growth-stage and variety information before recommending a specific thinning time.",
+    "source": "theinning_guidelines.txt"
+  },
+  {
+    "id": "kb-07",
+    "section_number": 7,
+    "title": "VARIETY-SPECIFIC RULES",
+    "text": "Thinning recommendations must not be assumed to be identical across all date palm varieties.\n\nExamples of varieties include:\n- Sukari\n- Khalas\n- Barhi\n- Medjool\n- Deglet Noor\n\nEach variety can have different:\n- Bunch characteristics.\n- Fruit size.\n- Fruit density.\n- Thinning requirements.\n- Production targets.\n\nIf the variety is unknown:\n- Do not apply variety-specific thresholds.\n- Mark the recommendation as requiring additional information.\n\nFor the MVP:\n- The system should initially focus on one selected variety.\n- The variety should be explicitly provided as an input.",
+    "source": "theinning_guidelines.txt"
+  },
+  {
+    "id": "kb-08",
+    "section_number": 8,
+    "title": "AI DECISION PRINCIPLES",
+    "text": "The Agriculture Agent should combine:\n\nVision Analysis\n+\nColor Sensor Data\n+\nPalm Information\n+\nPalm History\n+\nAgricultural Knowledge\n\nThe AI should NOT make a thinning recommendation based on color sensor data alone.\n\nExample reasoning:\n\nHigh fruit density\n+\nSuitable growth stage\n+\nKnown variety\n+\nSupporting color information\n+\nHistorical evidence of high crop load\n\n=\nHigher likelihood that thinning should be considered.\n\nThe final recommendation must remain advisory.",
+    "source": "theinning_guidelines.txt"
+  },
+  {
+    "id": "kb-09",
+    "section_number": 9,
+    "title": "CONFIDENCE AND VALIDATION",
+    "text": "The system should produce a confidence score for its analysis.\n\nHigh confidence:\n- Image quality is good.\n- Required inputs are available.\n- Vision analysis and agricultural information are consistent.\n- Color sensor data is available and consistent with the visual assessment.\n\nMedium confidence:\n- Some information is uncertain or incomplete.\n- Human review is recommended.\n\nLow confidence:\n- Image quality is poor.\n- Important information is missing.\n- Sensor data is unreliable.\n- Agents produce conflicting results.\n\nIf confidence is below the configured threshold:\n- Do not provide an automatic thinning recommendation.\n- Request additional information or human review.\n\nIMPORTANT:\nConfidence is an AI/model confidence indicator.\nIt is NOT a guarantee that the recommendation is correct.",
+    "source": "theinning_guidelines.txt"
+  },
+  {
+    "id": "kb-10",
+    "section_number": 10,
+    "title": "HUMAN-IN-THE-LOOP",
+    "text": "The AI system provides recommendations only.\n\nThe farmer or qualified agricultural specialist must:\n- Review the recommendation.\n- Approve or reject the recommendation.\n- Decide whether physical thinning should be performed.\n\nThe system must never automatically perform physical thinning.\n\nPossible UI actions:\n- APPROVE RECOMMENDATION\n- REJECT RECOMMENDATION\n- REQUEST NEW ANALYSIS",
+    "source": "theinning_guidelines.txt"
+  },
+  {
+    "id": "kb-11",
+    "section_number": 11,
+    "title": "MEMORY",
+    "text": "The system may maintain a history for each palm.\n\nExample:\n\nPalm ID: P-001\n\nPrevious Analysis:\nFruit density = High\n\nPrevious Recommendation:\nThinning should be considered\n\nFarmer Decision:\nApproved\n\nFollow-up Analysis:\nFruit density = Medium\n\nThe historical information can be used by the Agriculture Agent to understand changes over time.",
+    "source": "theinning_guidelines.txt"
+  },
+  {
+    "id": "kb-12",
+    "section_number": 12,
+    "title": "MVP INPUTS",
+    "text": "The MVP may use:\n\n1. Palm / fruit bunch image.\n2. Color sensor reading.\n3. Palm ID.\n4. Palm variety.\n5. Growth stage.\n6. Previous palm history when available.\n\nFor the prototype, the color sensor value may be simulated if physical sensor hardware is not available.",
+    "source": "theinning_guidelines.txt"
+  },
+  {
+    "id": "kb-13",
+    "section_number": 13,
+    "title": "RECOMMENDATION OUTPUT",
+    "text": "The Decision Agent should return:\n\n- Thinning required: YES / NO / REVIEW\n- Suggested thinning level: only when supported by sufficient evidence\n- Priority: LOW / MEDIUM / HIGH\n- Confidence score\n- Reason\n- Required farmer action\n\nExample:\n\nThinning Required: REVIEW\n\nSuggested Thinning:\nNot specified because additional agricultural information is required.\n\nPriority:\nMEDIUM\n\nConfidence:\n72%\n\nReason:\nHigh fruit density was detected, but the palm variety and growth-stage information are incomplete.\n\nFarmer Action:\nProvide additional information or request agricultural review.",
+    "source": "theinning_guidelines.txt"
+  },
+  {
+    "id": "kb-14",
+    "section_number": 14,
+    "title": "SAFETY RULES",
+    "text": "The system must:\n- Avoid unsupported numerical recommendations.\n- Avoid universal thinning percentages.\n- Avoid recommendations when critical data is missing.\n- Never rely on color sensor data alone.\n- Request human review when confidence is low.\n- Never automatically execute physical agricultural actions.\n- Clearly communicate uncertainty.",
+    "source": "theinning_guidelines.txt"
+  },
+  {
+    "id": "kb-15",
+    "section_number": 15,
+    "title": "KNOWLEDGE RETRIEVAL",
+    "text": "The Agriculture Agent may use Retrieval-Augmented Generation (RAG) to retrieve relevant information from this knowledge base.\n\nThe retrieved information should be combined with:\n- Vision Agent output.\n- Color sensor data.\n- Palm information.\n- Palm history.\n\nThe retrieved knowledge should support agricultural reasoning rather than replace human judgment.",
+    "source": "theinning_guidelines.txt"
+  },
+  {
+    "id": "kb-16",
+    "section_number": 16,
+    "title": "SOURCE",
+    "text": "Primary general reference:\n\nFood and Agriculture Organization of the United Nations (FAO),\nDate Palm Cultivation,\nChapter VIII – Pollination and Bunch Management,\nFruit Thinning.\n\nAdditional research can be added to this knowledge base as the project develops.",
+    "source": "theinning_guidelines.txt"
+  }
+]
